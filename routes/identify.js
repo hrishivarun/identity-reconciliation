@@ -22,8 +22,16 @@ async function consolidateContact(contact) {
     });
 
     // Consolidating the response
-    const emails = [primaryContact.email, ...secondaryContacts.map(c => c.email)].filter(Boolean);
-    const phoneNumbers = [primaryContact.phoneNumber, ...secondaryContacts.map(c => c.phoneNumber)].filter(Boolean);
+    const uniqueEmails = new Set();
+    uniqueEmails.add(primaryContact.email);
+    secondaryContacts.map(c => uniqueEmails.add(c.email));
+
+    const uniqueNumbers = new Set();
+    uniqueNumbers.add(primaryContact.phoneNumber);
+    secondaryContacts.map(c => uniqueNumbers.add(c.phoneNumber));
+
+    const emails = Array.from(uniqueEmails);
+    const phoneNumbers = Array.from(uniqueNumbers);
     const secondaryContactIds = secondaryContacts.map(c => c.id);
 
     return {
@@ -46,7 +54,11 @@ router.post('/', async (req, res) => {
     const newContact = Contact.build({ email, phoneNumber });
 
     // Link contacts if found
-    if (existingEmailContact || existingPhoneContact) {
+    if((existingEmailContact!=null && existingPhoneContact!=null)
+      || (existingEmailContact!=null && newContact.phoneNumber==null) 
+      || (existingPhoneContact!=null && newContact.email==null)) {
+        newContact.linkedId = existingEmailContact?.linkedId || existingEmailContact?.id || existingPhoneContact?.id || existingPhoneContact?.linkedId;
+    }else if (existingEmailContact || existingPhoneContact) {
         await linkContact(newContact, existingEmailContact || existingPhoneContact);
     } else {
         await newContact.save();  // Treat as new if no matching contact
