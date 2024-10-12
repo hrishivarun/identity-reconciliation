@@ -53,14 +53,26 @@ router.post('/', async (req, res) => {
     // New contact entry
     const newContact = Contact.build({ email, phoneNumber });
 
-    // Link contacts if found
+    // Link contacts if found match between existing records
+    if(existingEmailContact!=null && existingPhoneContact!=null && existingEmailContact.id!=existingPhoneContact.id) {
+      existingPhoneContact.linkedId = existingEmailContact.id;
+      existingPhoneContact.linkPrecedence='secondary';
+      existingPhoneContact.save();
+    }
+
+    //Do nothing if incoming contact details are already in db
     if((existingEmailContact!=null && existingPhoneContact!=null)
       || (existingEmailContact!=null && newContact.phoneNumber==null) 
       || (existingPhoneContact!=null && newContact.email==null)) {
-        newContact.linkedId = existingEmailContact?.linkedId || existingEmailContact?.id || existingPhoneContact?.id || existingPhoneContact?.linkedId;
-    }else if (existingEmailContact || existingPhoneContact) {
+        newContact.linkedId = 
+          existingEmailContact?.linkedId || existingEmailContact?.id || existingPhoneContact?.id || existingPhoneContact?.linkedId;
+    }
+    //if either email or phone matches, add request as secondary contact
+    else if (existingEmailContact || existingPhoneContact) { 
         await linkContact(newContact, existingEmailContact || existingPhoneContact);
-    } else {
+    } 
+    //Save as primary contact if no link found
+    else {
         await newContact.save();  // Treat as new if no matching contact
     }
 
