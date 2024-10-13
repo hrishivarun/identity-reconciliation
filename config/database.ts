@@ -15,8 +15,7 @@ const sequelize = new Sequelize('postgresql://root:mQamLcw718irHVvmV6SKOQ5Sh0Xzs
       require: true, // Enforce SSL connection
       rejectUnauthorized: false, // You may need this if Render requires a self-signed certificate
     },
-  },
-  logging: false, // Disable logging if not needed
+  },// Disable logging if not needed
 });
 
 // const sequelize = new Sequelize('bitespeed_db_912b', 'root', db_key, {
