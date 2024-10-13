@@ -5,7 +5,7 @@ dotenv.config();
 let db_key = process.env.DATABASE_KEY || "mQamLcw718irHVvmV6SKOQ5Sh0Xzs1Oi";
 
 const sequelize = new Sequelize('bitespeed_db_912b', 'root', db_key, {
-    host: 'postgresql://root:mQamLcw718irHVvmV6SKOQ5Sh0Xzs1Oi@dpg-cs5vnjt6l47c73f90ca0-a.frankfurt-postgres.render.com/bitespeed_db_912b',
+    host: 'postgresql://root:mQamLcw718irHVvmV6SKOQ5Sh0Xzs1Oi@dpg-cs5vnjt6l47c73f90ca0-a/bitespeed_db_912b',
     dialect: 'postgres',
     port: 5432
 });
