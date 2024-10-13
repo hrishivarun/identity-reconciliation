@@ -1,84 +1,43 @@
-const express = require('express');
-const router = express.Router();
-const Contact = require('../models/contact');
-
-// Helper to link contact
-async function linkContact(contact, existingContact) {
-    // If contact matches an existing one, link them
-    if (existingContact) {
-        contact.linkedId = existingContact.linkedId || existingContact.id;
-        contact.linkPrecedence = 'secondary';
-        await contact.save();
-    } else {
-        await contact.save();  // Save as primary if it's new
-    }
-}
-
-// Helper to consolidate contacts
-async function consolidateContact(contact) {
-    const primaryContact = await Contact.findByPk(contact.linkedId || contact.id);
-    const secondaryContacts = await Contact.findAll({
-        where: { linkedId: primaryContact.id }
-    });
-
-    // Consolidating the response
-    const uniqueEmails = new Set();
-    uniqueEmails.add(primaryContact.email);
-    secondaryContacts.map(c => uniqueEmails.add(c.email));
-
-    const uniqueNumbers = new Set();
-    uniqueNumbers.add(primaryContact.phoneNumber);
-    secondaryContacts.map(c => uniqueNumbers.add(c.phoneNumber));
-
-    const emails = Array.from(uniqueEmails);
-    const phoneNumbers = Array.from(uniqueNumbers);
-    const secondaryContactIds = secondaryContacts.map(c => c.id);
-
-    return {
-        primaryContatctId: primaryContact.id,
-        emails: emails,
-        phoneNumbers: phoneNumbers,
-        secondaryContactIds: secondaryContactIds
-    };
-}
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const contact_1 = __importDefault(require("../models/contact"));
+const helpers_1 = require("./helpers");
+const router = express_1.default.Router();
+// Error handling middleware
+const asyncHandler = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 // Identify endpoint
-router.post('/', async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
     const { email, phoneNumber } = req.body;
-
     // Find existing contacts
-    const existingEmailContact = await Contact.findOne({ where: { email } });
-    const existingPhoneContact = await Contact.findOne({ where: { phoneNumber } });
-
+    const existingEmailContact = await contact_1.default.findOne({ where: { email } });
+    const existingPhoneContact = await contact_1.default.findOne({ where: { phoneNumber } });
     // New contact entry
-    const newContact = Contact.build({ email, phoneNumber });
-
+    const newContact = contact_1.default.build({ email, phoneNumber, linkPrecedence: 'primary', createdAt: new Date() });
     // Link contacts if found match between existing records
-    if(existingEmailContact!=null && existingPhoneContact!=null && existingEmailContact.id!=existingPhoneContact.id) {
-      existingPhoneContact.linkedId = existingEmailContact.id;
-      existingPhoneContact.linkPrecedence='secondary';
-      existingPhoneContact.save();
+    if (existingEmailContact != null && existingPhoneContact != null && existingEmailContact.id != existingPhoneContact.id) {
+        await (0, helpers_1.linkContact)(existingPhoneContact, existingEmailContact);
+        await (0, helpers_1.updateLinkedIds)(existingPhoneContact, existingEmailContact.id);
     }
-
     //Do nothing if incoming contact details are already in db
-    if((existingEmailContact!=null && existingPhoneContact!=null)
-      || (existingEmailContact!=null && newContact.phoneNumber==null) 
-      || (existingPhoneContact!=null && newContact.email==null)) {
-        newContact.linkedId = 
-          existingEmailContact?.linkedId || existingEmailContact?.id || existingPhoneContact?.id || existingPhoneContact?.linkedId;
+    if ((existingEmailContact != null && existingPhoneContact != null)
+        || (newContact.phoneNumber == null || newContact.email == null)) {
+        newContact.linkedId =
+            existingEmailContact?.linkedId || existingEmailContact?.id || existingPhoneContact?.id || existingPhoneContact?.linkedId;
     }
     //if either email or phone matches, add request as secondary contact
-    else if (existingEmailContact || existingPhoneContact) { 
-        await linkContact(newContact, existingEmailContact || existingPhoneContact);
-    } 
+    else if (existingEmailContact || existingPhoneContact) {
+        await (0, helpers_1.linkContact)(newContact, existingEmailContact || existingPhoneContact);
+    }
     //Save as primary contact if no link found
     else {
-        await newContact.save();  // Treat as new if no matching contact
+        await newContact.save(); // Treat as new if no matching contact
     }
-
     // Return the consolidated contact info
-    const consolidatedContact = await consolidateContact(newContact);
+    const consolidatedContact = await (0, helpers_1.consolidateContact)(newContact);
     return res.json({ contact: consolidatedContact });
-});
-
-module.exports = router;
+}));
+exports.default = router;

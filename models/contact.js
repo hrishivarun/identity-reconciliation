@@ -1,36 +1,52 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
-
-const Contact = sequelize.define('Contact', {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const sequelize_1 = require("sequelize");
+const database_1 = __importDefault(require("../config/database"));
+// Extend Sequelize's Model class with Contact attributess
+class Contact extends sequelize_1.Model {
+}
+Contact.init({
+    id: {
+        type: sequelize_1.DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+    },
     phoneNumber: {
-        type: DataTypes.STRING,
+        type: sequelize_1.DataTypes.STRING,
         allowNull: true,
     },
     email: {
-        type: DataTypes.STRING,
+        type: sequelize_1.DataTypes.STRING,
         allowNull: true,
     },
     linkedId: {
-        type: DataTypes.INTEGER,
+        type: sequelize_1.DataTypes.INTEGER,
         allowNull: true,
     },
     linkPrecedence: {
-        type: DataTypes.ENUM('primary', 'secondary'),
+        type: sequelize_1.DataTypes.ENUM('primary', 'secondary'),
         allowNull: false,
-        defaultValue: 'primary',
     },
     createdAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: false,
     },
     updatedAt: {
-        type: DataTypes.DATE,
-        defaultValue: DataTypes.NOW,
+        type: sequelize_1.DataTypes.DATE,
+        allowNull: true,
     },
     deletedAt: {
-        type: DataTypes.DATE,
+        type: sequelize_1.DataTypes.DATE,
         allowNull: true,
-    }
+    },
+}, {
+    sequelize: database_1.default,
+    modelName: 'Contact',
+    tableName: 'Contacts',
+    timestamps: true,
+    paranoid: true,
 });
-
-module.exports = Contact;
+exports.default = Contact;
