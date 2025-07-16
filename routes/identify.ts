@@ -8,7 +8,7 @@ const router = express.Router();
 const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) =>
     Promise.resolve(fn(req, res, next)).catch(next);
 // Identify endpoint
-router.post('/', asyncHandler(async (req: Request<{}, {}, ContactRequest>, res: Response) => {
+router.get('/', asyncHandler(async (req: Request<{}, {}, ContactRequest>, res: Response) => {
     const { email, phoneNumber } = req.body;
 
     // Find existing contacts
